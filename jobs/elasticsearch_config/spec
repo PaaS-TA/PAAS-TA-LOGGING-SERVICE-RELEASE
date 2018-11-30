@@ -1,0 +1,46 @@
+---
+name: "elasticsearch_config"
+
+packages:
+  - "elasticsearch"
+  - "java8"
+
+templates:
+  bin/run.erb:                          bin/run
+  bin/job.process:                      bin/job.process
+  index-templates/shards-and-replicas.json.erb:  index-templates/shards-and-replicas.json
+  index-templates/index-settings.json.erb:  index-templates/index-settings.json
+  index-templates/index-mappings.json.erb:  index-templates/index-mappings.json
+  index-templates/index-mappings-laas.json.erb:  index-templates/index-mappings-laas.json
+  index-templates/index-mappings-app.json.erb:  index-templates/index-mappings-app.json
+  index-templates/index-mappings-platform.json.erb:  index-templates/index-mappings-platform.json
+properties:
+  elasticsearch_config.elasticsearch.host:
+    description: "The elasticsearch master node hostname"
+  elasticsearch_config.elasticsearch.port:
+    description: "the elasticsearch master node port"
+    default: 9200
+  elasticsearch_config.index_prefix:
+    description: |
+      Name prefix of your log indices that can uniquely distinguish them among other ES indices if apply pattern '*' to it, e.g. 'logs-*'. 
+      It is used in the index templates predefined in the job to specify index pattern.
+      Make sure the prefix matches `logstash_parser.elasticsearch.index` property set for your parser.
+    default: "laas-*"
+  elasticsearch_config.platform_index_prefix:
+    default: "laas-platform-*"
+  elasticsearch_config.templates:
+    description: "An array with key-value hashes; keys being template name, value being template content"
+    default: []
+  elasticsearch_config.docs:
+    description: "An array with key-value hashes; keys being doc path, value being doc source"
+    default: []
+  elasticsearch_config.license:
+    description: "The ElasticSearch License string"
+  kibana_config.version:
+    default: "5.3.0"
+  elasticsearch.node.allow_master:
+    description: Allow node to become master? (true / false)
+    default: false
+  elasticsearch.node.allow_data:
+    description: Allow node to store data? (true / false)
+    default: false

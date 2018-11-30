@@ -1,0 +1,8 @@
+---
+name: firehose-to-syslog
+
+dependencies:
+  - golang
+
+files:
+  - github.com/cloudfoundry-community/firehose-to-syslog/**/* 

@@ -1,0 +1,62 @@
+<%
+# ## README:
+#
+# This file contains mappings applied to all logs indicies (both 'app*' and 'platform*').
+#
+# By default all string fields are set as `not_analyzed`. Field `@message` is set as a full-text field.
+#
+
+require 'json'
+
+
+string_default = { "type": "string", "index": "not_analyzed" }.to_json
+
+full_text_with_raw_copy = {
+  "type": "string",
+  "index": "analyzed",
+  "norms": { "enabled": false },
+  "fields": {
+    "raw": {
+      "type": "string",
+      "index": "not_analyzed",
+      "ignore_above": 256
+    }
+  }
+}.to_json
+
+%>
+{
+  "template" : "<%= p('elasticsearch_config.index_prefix') %>*",
+  "order": 202,
+  "mappings" : {
+
+    <%# --------------  Default type (applied to all types) %>
+
+    "_default_" : {
+      "_all": { "enabled": true},
+      "properties" : {
+
+         <%# ------  common fields %>
+
+         "@timestamp":  { "type": "date" },
+         "@message":    <%= full_text_with_raw_copy %>,
+         "@level":      <%= string_default %>,
+
+         "@source": {
+           "type": "object",
+           "dynamic": true,
+           "properties": {
+             "job":        <%= string_default %>,
+             "job_index":  <%= string_default %>,
+             "index":      { "type": "long" },
+             "component":  <%= string_default %>,
+             "type":       <%= string_default %>,
+             "vm":         <%= string_default %>
+           }
+         }
+
+      }
+    }
+  }
+}
+

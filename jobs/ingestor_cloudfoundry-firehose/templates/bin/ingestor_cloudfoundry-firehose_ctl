@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set -e # exit immediately if a simple command exits with a non-zero status
+set -u # report the usage of uninitialized variables
+
+# Setup env vars and folders for the webapp_ctl script
+source /var/vcap/jobs/ingestor_cloudfoundry-firehose/helpers/ctl_setup.sh 'ingestor_cloudfoundry-firehose'
+
+export LANG=en_US.UTF-8
+
+case $1 in
+
+  start)
+    echo "Starting CF firehose-to-syslog ingestor..."
+
+    # Disable IPv6, since this seems to prevent firehose-to-syslog from connecting to logstash
+    if ! grep -q 'net.ipv6.conf.lo.disable_ipv6 = 1' /etc/sysctl.conf ; then
+       echo "Disabling IPv6..."
+       echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
+       echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
+       echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf
+       sysctl -p
+    fi
+
+    echo "Waiting 1m for syslog ingestor to accept connections..."
+    n=0
+    until [ $n -ge 12 ]
+    do
+      if [[ -x `which nc` ]] && nc -h 2>&1 | grep -q  -- '-z';then
+        nc -4 -z -v <%= p("syslog.host") %> <%= p("syslog.port") %> 2>&1 && break
+      else
+        (echo > /dev/tcp/<%= p("syslog.host") %>/<%= p("syslog.port") %>) > \
+          /dev/null 2>&1 && echo "OPEN" || echo "CLOSED" | grep -q OPEN && break
+      fi
+      n=$[$n+1]
+      echo "Waiting for syslog to accept connections ($n of 12)..."
+      sleep 5
+    done
+
+    if [ "$n" -ge "12" ]; then
+       echo "ERROR:  Cannot connect to syslog ingestor. Exiting..."
+       exit 1
+    fi
+
+    pid_guard $PIDFILE $JOB_NAME
+
+    # store pid in $PIDFILE
+    echo $$ > $PIDFILE
+
+    exec chpst -u vcap:vcap firehose-to-syslog \
+        --api-endpoint=<%= p("cloudfoundry.api_endpoint") %> \
+        <% if_p("cloudfoundry.doppler_endpoint") do |endpoint| %>--doppler-endpoint=<%= endpoint %><% end %> \
+        <% if properties.syslog.cert_pem %>--cert-pem-syslog=${JOB_DIR}/config/cert.pem<% end %> \
+        <% if p("cloudfoundry.skip_ssl_validation") %>--skip-ssl-validation <% end %> \
+        --client-id=<%= p("cloudfoundry.firehose_client_id") %> \
+        --client-secret=<%= p("cloudfoundry.firehose_client_secret") %> \
+        --syslog-protocol=<%= p("syslog.protocol") %>\
+        --syslog-server=<%= p("syslog.host") %>:<%= p("syslog.port") %>\
+        --events=<%= p("cloudfoundry.firehose_events") %> \
+        --subscription-id=<%= p("cloudfoundry.firehose_subscription_id") %> \
+        --boltdb-path=$TMP_DIR/firehose-to-syslog.cache.db \
+        --cc-pull-time=<%= p("cloudfoundry.firehose_cc_pull_interval") %> \<% if p("ingestor_cloudfoundry-firehose.debug") %>
+        --debug \<% end%>
+         >>$LOG_DIR/$JOB_NAME.stdout.log \
+         2>>$LOG_DIR/$JOB_NAME.stderr.log
+
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+
+    ;;
+  *)
+    echo "Usage: ingestor_cloudfoundry-firehose_ctl {start|stop}"
+
+    ;;
+
+esac
+exit 0

@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#######################################
+# wait for elasticsearch availability
+#######################################
+
+until curl -f 'http://<%= p("kibana.elasticsearch.host") %>:<%= p("kibana.elasticsearch.port") %>/_cluster/health?wait_for_status=green&timeout=10m'; do :; done
+
+
+#################################
+# LaaS :: create default index
+#################################
+
+URL=<%= p("kibana.elasticsearch.host") %>:<%= p("kibana.elasticsearch.port") %>/laas-default-index/index/1
+HTTP_CODE=$(curl -s -w '%{http_code}' -o /tmp/kibana-response.txt -X PUT "$URL" -d '{"@message": "default laas index"}')
+
+if grep --quiet "\"errors\":true" /tmp/kibana-response.txt ; then
+  cat /tmp/kibana-response.txt > /dev/stderr
+  exit $HTTP_CODE
+fi
+
+if [ "$HTTP_CODE" -le "300" ]; then
+  cat /tmp/kibana-response.txt
+else
+  cat /tmp/kibana-response.txt > /dev/stderr
+  exit $HTTP_CODE
+fi
+
+
+######################################
+# LaaS :: create kibana index-pattern
+######################################
+URL=<%= p("kibana.elasticsearch.host") %>:<%= p("kibana.elasticsearch.port") %>/.kibana/index-pattern/laas-default-index
+HTTP_CODE=$(curl -s -w '%{http_code}' -o /tmp/kibana-response.txt -X PUT "$URL" -d '{"title": "laas-default-index"}')
+
+if grep --quiet "\"errors\":true" /tmp/kibana-response.txt ; then
+  cat /tmp/kibana-response.txt > /dev/stderr
+  exit $HTTP_CODE
+fi
+
+if [ "$HTTP_CODE" -le "300" ]; then
+  cat /tmp/kibana-response.txt
+else
+  cat /tmp/kibana-response.txt > /dev/stderr
+  exit $HTTP_CODE
+fi
+
+##############################################
+# LaaS :: kibana default indexpattern setting
+##############################################
+URL=<%= p("kibana.elasticsearch.host") %>:<%= p("kibana.elasticsearch.port") %>/.kibana/config/<%= p("kibana.version") %>
+HTTP_CODE=$(curl -s -w '%{http_code}' -o /tmp/kibana-response.txt -X PUT "$URL" -d '{"defaultIndex": "laas-default-index"}')
+
+if grep --quiet "\"errors\":true" /tmp/kibana-response.txt ; then
+  cat /tmp/kibana-response.txt > /dev/stderr
+  exit $HTTP_CODE
+fi
+
+if [ "$HTTP_CODE" -le "300" ]; then
+  cat /tmp/kibana-response.txt
+else
+  cat /tmp/kibana-response.txt > /dev/stderr
+  exit $HTTP_CODE
+fi
+
+
+

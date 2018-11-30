@@ -1,0 +1,61 @@
+---
+name: ingestor_cloudfoundry-firehose
+packages:
+- firehose-to-syslog
+templates:
+  bin/ingestor_cloudfoundry-firehose_ctl: bin/ingestor_cloudfoundry-firehose_ctl
+  bin/monit_debugger: bin/monit_debugger
+  bin/pre-start.erb: bin/pre-start
+  config/cert.pem.erb: config/cert.pem
+  data/properties.sh.erb: data/properties.sh
+  helpers/ctl_setup.sh: helpers/ctl_setup.sh
+  helpers/ctl_utils.sh: helpers/ctl_utils.sh
+properties:
+  ingestor_cloudfoundry-firehose.debug:
+    description: Debug level logging. This disables forwarding to syslog
+    default: false
+  logstash.metadata_level:
+    description: "Whether to include additional metadata throughout the event lifecycle. NONE = disabled, DEBUG = fully enabled"
+    default: "NONE"
+
+  cloudfoundry.api_endpoint:
+    description: "URI of the CF cloud controller"
+  cloudfoundry.doppler_endpoint:
+    description: "URI of the loggregator endpoint"
+  cloudfoundry.skip_ssl_validation:
+    description: "Set to true to skip SSL validation when connecting to CF (defaults to false)"
+    default: false
+  cloudfoundry.firehose_client_id:
+    description: "CF UAA client ID with 'doppler.firehose' permissions"
+    default: "firehose-to-syslog"
+  cloudfoundry.firehose_client_secret:
+    description: "CF UAA client secret with 'doppler.firehose' permissions"
+    default: ""
+  cloudfoundry.firehose_events:
+    description: "Comma seperated list of events you would like to get. Valid options are CounterEvent,Error,HttpStartStop,LogMessage,ValueMetric,ContainerMetric"
+    default: "LogMessage"
+  cloudfoundry.firehose_subscription_id:
+    description: "ID for the firehose-to-syslog subscription"
+    default: "firehose"
+  cloudfoundry.firehose_cc_pull_interval:
+    description: "full app metadata update interval; defaults to 60s"
+    default: "60s"
+
+  syslog.host:
+    description: IP or hostname of the syslog drain
+  syslog.port:
+    description: port of the syslog drain
+    default: 5514
+  syslog.protocol:
+    description: Syslog protocol (tcp/udp).
+    default: tcp
+  syslog.cert_pem:
+    description: Certificate PEM.
+    default: ~
+
+  create-uaa-client.cloudfoundry.system_domain:
+    description: "The Elastic Runtime system domain ( eg: system.10.244.0.34.xip.io )"
+  create-uaa-client.cloudfoundry.uaa_admin_client_id:
+    description: "The UAA admin client id (required scope is `uaa.admin`). The admin client is used to manage the UAA Kibana oauth2 client."
+  create-uaa-client.cloudfoundry.uaa_admin_client_secret:
+    description: "The UAA admin client's secret"
