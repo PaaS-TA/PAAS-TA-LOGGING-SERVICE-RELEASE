@@ -73,7 +73,7 @@ properties:
     description: "cloud foundry uaa url"
     default: "https://cf-uaa-url"
   laas.top_left_logo_image:
-    description: "top left logo image :: 170*70"
+    description: "top left logo image :: 180*70"
     default: ""
   laas.elasticsearch_index_prefix:
     description: "elasticsearch_index_prefix"
