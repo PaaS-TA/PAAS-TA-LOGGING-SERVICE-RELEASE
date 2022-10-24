@@ -1,8 +1,0 @@
----
-name: curator
-dependencies:
-- python3
-files:
-- curator/elasticsearch-curator-4.2.6.tar.gz
-- curator/elasticsearch-curator-requirements.tar.gz
-

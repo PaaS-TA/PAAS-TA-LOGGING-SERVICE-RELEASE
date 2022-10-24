@@ -1,7 +1,0 @@
----
-name: python3
-
-dependencies: []
-
-files:
-- python/Python-3.6.1.tgz

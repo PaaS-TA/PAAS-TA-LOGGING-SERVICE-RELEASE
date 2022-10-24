@@ -1,8 +1,0 @@
----
-name: logsearch-config
-
-dependencies:
-  - ruby2.3
-
-files:
-- logsearch-config/**/*
